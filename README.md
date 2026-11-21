@@ -8,7 +8,7 @@
 
 已有便携应用包可以直接按下面操作。刚下载源码 ZIP 的话，请先[构建应用包](#安装与构建)。
 
-1. 解压整个应用包。macOS 打开 `QQ音乐转码平台.app`。Windows 双击 `Start.cmd`，应用会在默认浏览器中打开。
+1. 解压整个应用包。macOS 打开 `QQ音乐转码平台.app`。Windows 双击带紫色图标的 `Start.exe`，应用会在默认浏览器中打开。
 2. 首次启动时选择 **下载目录** 和 **导出目录**。下载目录应直接包含歌曲文件。应用会尝试识别常见路径。之后可在 macOS 的「目录设置」或 Windows 的「工作目录」中更改。默认导出到系统音乐目录下的 `QQ音乐转换`。
 3. 在「待处理」列表中勾选歌曲。可以按歌名或歌手搜索，按音质、源格式或歌手筛选和分组，或按歌名首字母排序。
 4. 选择转换模式，开始并确认本批次。转换完成后，从导出目录的 `原音` 或 `MP3` 子文件夹打开歌曲。
@@ -55,7 +55,7 @@ python3 source/fetch_dependencies.py macos
 python3 source/package_portable.py macos
 ```
 
-产物 `dist/QQMusicStudio-2.0-macOS-universal.zip` 同时支持 Apple 芯片和 Intel 芯片。解压后打开 `QQ音乐转码平台.app`。打包默认使用临时签名。需要向其他人分发时，可使用 Developer ID 签名并提交 Apple 公证。
+产物 `dist/QQMusicStudio-2.0.1-macOS-universal.zip` 同时支持 Apple 芯片和 Intel 芯片。解压后打开 `QQ音乐转码平台.app`。打包默认使用临时签名。需要向其他人分发时，可使用 Developer ID 签名并提交 Apple 公证。
 
 如果有多个兼容的 macOS SDK，可以显式指定已安装的 SDK。例如，使用已验证过的 macOS 26.5 SDK。
 
@@ -65,14 +65,14 @@ python3 source/package_portable.py macos --sdk "$(xcrun --sdk macosx26.5 --show-
 
 ### Windows x64 或 ARM64
 
-构建需要 Python 3.9 或更新版本。在 PowerShell 中执行以下命令。若 `py` 命令不可用，可用 `python` 代替 `py -3`。
+构建需要 Python 3.9 或更新版本，以及用于编译启动器的 Zig（已验证 0.15.2）。将 Zig 加入 `PATH`，或向打包命令传入 `--zig` 和 Zig 可执行文件的完整路径。便携包自带运行时。在 PowerShell 中执行以下命令。若 `py` 命令不可用，可用 `python` 代替 `py -3`。
 
 ```powershell
 py -3 source/fetch_dependencies.py windows-x64
 py -3 source/package_portable.py windows-x64
 ```
 
-ARM64 电脑将两条命令中的 `windows-x64` 改成 `windows-arm64`。在 `dist/` 找到对应的 `QQMusicStudio-2.0-Windows-x64.zip` 或 `QQMusicStudio-2.0-Windows-arm64.zip`，解压整个文件夹后双击 `Start.cmd`。网页服务只在本机运行，可点浏览器界面的「退出」关闭应用。
+ARM64 电脑将两条命令中的 `windows-x64` 改成 `windows-arm64`。在 `dist/` 找到对应的 `QQMusicStudio-2.0.1-Windows-x64.zip` 或 `QQMusicStudio-2.0.1-Windows-arm64.zip`，解压整个文件夹后双击 `Start.exe`。若打开失败，可用同目录的 `Start.cmd` 查看错误信息。网页服务只在本机运行，可点浏览器界面的「退出」关闭应用。
 
 ## 常见问题
 

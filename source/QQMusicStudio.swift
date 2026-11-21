@@ -1048,6 +1048,7 @@ private struct DirectorySettingsView: View {
 }
 
 private struct StudioView: View {
+    private static let coverImage = Bundle.main.image(forResource: "AppCover")
     @StateObject private var model = StudioModel()
     @FocusState private var searchFocused: Bool
 
@@ -1080,12 +1081,22 @@ private struct StudioView: View {
 
     private var header: some View {
         HStack(spacing: 13) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.accentColor.gradient)
-                Image(systemName: "waveform")
-                    .font(.system(size: 24, weight: .semibold))
-                    .foregroundStyle(.white)
+            Group {
+                if let coverImage = Self.coverImage {
+                    Image(nsImage: coverImage)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFit()
+                        .clipShape(.rect(cornerRadius: 12))
+                } else {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.accentColor.gradient)
+                        Image(systemName: "waveform")
+                            .font(.system(size: 24, weight: .semibold))
+                            .foregroundStyle(.white)
+                    }
+                }
             }
             .frame(width: 46, height: 46)
             .accessibilityHidden(true)

@@ -36,9 +36,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 }
 .brand, .top-actions { display: flex; align-items: center; gap: 13px; }
 .brand-icon {
-  width: 41px; height: 41px; display: grid; place-items: center; border-radius: 12px;
-  background: linear-gradient(155deg, #7466df, #4b42b1); color: white;
-  font-size: 25px; box-shadow: 0 6px 11px #3f368826;
+  display: block; flex: none; border-radius: 12px;
 }
 .brand p { color: var(--muted); font-size: .8rem; margin-top: 2px; }
 .connection { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: .8rem; white-space: nowrap; }

@@ -10,6 +10,8 @@ import tempfile
 import zipfile
 
 from fetch_dependencies import ARTIFACTS, TARGETS, pinned_file
+from package_macos_icon import build_macos_icon
+from package_windows_launcher import build_windows_launcher
 
 SOURCE = Path(__file__).resolve().parent
 ROOT = SOURCE.parent
@@ -17,7 +19,8 @@ DIST = ROOT / 'dist'
 BUILD = ROOT / 'build'
 PROGRAM = ('studio.py', 'ledger.py', 'portable_paths.py', 'portable_lock.py', 'library_metadata.py')
 APP = 'QQ音乐转码平台'
-VERSION = '2.0'
+APP_COVER = SOURCE / 'web' / 'app-icon.png'
+VERSION = '2.0.1'
 
 
 def run(*args):
@@ -78,9 +81,11 @@ def archive_tree(folder, target):
     print(target, flush=True)
 
 
-def build_windows(arch, staging, dependencies):
+def build_windows(arch, staging, dependencies, zig):
     folder = staging / 'QQMusicStudio'
     copy_program(folder, web=True)
+    build_windows_launcher(arch, folder / 'Start.exe', staging, zig)
+    shutil.copy2(SOURCE / 'WindowsLauncher-Notices.txt', folder / 'Notices' / 'WindowsLauncher-Notices.txt')
     runtime = folder / 'runtime'
     runtime.mkdir()
     with zipfile.ZipFile(dependencies[f'python-win-{arch}.zip']) as archive:
@@ -93,7 +98,8 @@ def build_windows(arch, staging, dependencies):
         b'if errorlevel 1 pause\r\n')
     (folder / '使用说明.txt').write_text(
         f'QQ 音乐转码平台 {VERSION} · Windows {arch}\n\n'
-        '解压整个文件夹后，双击 Start.cmd。默认浏览器会打开本机界面。\n'
+        '解压整个文件夹后，双击带紫色图标的 Start.exe。默认浏览器会打开本机界面。\n'
+        '如需排查启动问题，可运行同目录的 Start.cmd 查看错误信息。\n'
         '首次运行请确认下载目录和导出目录。之后可以在「目录设置」修改。\n'
         '可处理普通 FLAC、OGG 和支持的内嵌密钥文件。新版 musicex 需要该文件对应的单曲 ekey。\n'
         '「仅原音」保留可播放的 FLAC 或 OGG。MP3 预设会额外生成 MP3。\n'
@@ -120,6 +126,8 @@ def build_mac(identity, sdk, staging, dependencies):
     if not sdk.is_dir():
         raise ValueError(f'macOS SDK folder not found: {sdk}')
     print(f'Building macOS with SDK {sdk}', flush=True)
+    shutil.copy2(APP_COVER, resources / 'AppCover.png')
+    build_macos_icon(APP_COVER, resources / 'AppIcon.icns', sdk=sdk)
     swift_binaries = []
     ffmpeg_binaries = []
     for arch, suffix in (('arm64', 'arm64'), ('x86_64', 'x64')):
@@ -144,8 +152,9 @@ def build_mac(identity, sdk, staging, dependencies):
     info = {
         'CFBundleIdentifier': 'local.qqmusic.conversionstudio',
         'CFBundleName': APP, 'CFBundleDisplayName': APP, 'CFBundleExecutable': 'QQMusicStudio',
+        'CFBundleIconFile': 'AppIcon.icns',
         'CFBundleInfoDictionaryVersion': '6.0', 'CFBundleShortVersionString': VERSION,
-        'CFBundleVersion': '3', 'CFBundleDevelopmentRegion': 'zh-Hans', 'CFBundlePackageType': 'APPL',
+        'CFBundleVersion': '4', 'CFBundleDevelopmentRegion': 'zh-Hans', 'CFBundlePackageType': 'APPL',
         'LSMinimumSystemVersion': '14.0', 'NSHighResolutionCapable': True,
     }
     with (contents / 'Info.plist').open('wb') as handle:
@@ -176,9 +185,13 @@ def main():
     parser.add_argument('target', choices=TARGETS)
     parser.add_argument('--sdk', type=Path, help='macOS SDK path (defaults to the active Xcode SDK)')
     parser.add_argument('--sign', default='-', help='macOS signing identity (defaults to ad-hoc signing)')
+    parser.add_argument('--zig', type=Path, help='Zig executable for compiling the Windows launcher')
     args = parser.parse_args()
     if args.target == 'macos' and sys.platform != 'darwin':
         parser.error('The macOS target requires macOS and an Apple Swift 6 toolchain')
+    zig = args.zig or shutil.which('zig')
+    if args.target != 'macos' and zig is None:
+        parser.error('Building Windows packages requires Zig. Install Zig or pass --zig PATH.')
     try:
         dependencies = {name: pinned_file(name) for name in TARGETS[args.target]}
     except (OSError, ValueError) as error:
@@ -190,7 +203,7 @@ def main():
         if args.target == 'macos':
             build_mac(args.sign, args.sdk, staging, dependencies)
         else:
-            build_windows(args.target.removeprefix('windows-'), staging, dependencies)
+            build_windows(args.target.removeprefix('windows-'), staging, dependencies, zig)
 
 
 if __name__ == '__main__':

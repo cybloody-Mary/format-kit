@@ -65,6 +65,9 @@ def qa_http(backend, source, work):
     try:
         url, token = process.stdout.readline().strip().split('#token=',1)
         host = url.rstrip('/')
+        with urllib.request.urlopen(host + '/app-icon.png', timeout=10) as response:
+            assert response.headers.get_content_type() == 'image/png'
+            assert response.read() == (backend / 'web' / 'app-icon.png').read_bytes()
         def api(path, payload=None, auth=True):
             headers = {'Authorization':'Bearer '+token} if auth else {}
             if payload is not None:
