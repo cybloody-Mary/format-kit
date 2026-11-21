@@ -1,0 +1,6 @@
+TuneFree for Mac 3.2.2
+https://github.com/Dora-z/TuneFree_Mac/tree/v3.2.2
+
+FFmpeg 9.0 Apple Silicon build distributed by imageio-ffmpeg 0.8.1
+https://github.com/FFmpeg/FFmpeg/tree/n9.0
+https://github.com/imageio/imageio-ffmpeg/tree/v0.8.1

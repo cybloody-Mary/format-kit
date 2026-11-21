@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>QQ 音乐转码</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-icon" aria-hidden="true">♪</span>
+      <div><h1>QQ 音乐转码</h1><p>Windows 便携版</p></div>
+    </div>
+    <div class="top-actions">
+      <span id="connection" class="connection" role="status">正在连接</span>
+      <button id="refresh" type="button" class="button">刷新曲库</button>
+      <button id="stop" type="button" class="button quiet">退出</button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <div id="notice" class="notice" role="status" hidden></div>
+
+    <details id="paths-panel" class="card folder-card" open>
+      <summary><h2>工作目录</h2><span id="paths-caption">选择源目录与导出目录</span></summary>
+      <form id="paths-form" class="paths-form" autocomplete="off">
+        <label for="source">源目录</label>
+        <label for="export">导出目录</label>
+        <div class="path-field source-field">
+          <input id="source" required placeholder="QQ 音乐下载目录" spellcheck="false">
+          <button type="button" class="button pick" data-kind="source" aria-label="浏览源目录">浏览</button>
+        </div>
+        <div class="path-field export-field">
+          <input id="export" required placeholder="选择导出文件夹" spellcheck="false">
+          <button type="button" class="button pick" data-kind="export" aria-label="浏览导出目录">浏览</button>
+        </div>
+        <button id="apply-paths" class="button primary" type="submit">应用目录</button>
+      </form>
+    </details>
+
+    <section class="metrics" aria-label="曲库统计">
+      <div class="metric"><span>待处理</span><strong id="count-pending">—</strong></div>
+      <div class="metric"><span>成功</span><strong id="count-success">—</strong></div>
+      <div class="metric"><span>失败</span><strong id="count-failed">—</strong></div>
+      <div class="metric"><span>下载未完成</span><strong id="count-incomplete">—</strong></div>
+      <div class="metric"><span>历史导出</span><strong id="count-historical">—</strong></div>
+    </section>
+
+    <section class="card library" aria-labelledby="library-heading">
+      <div class="library-heading">
+        <div><h2 id="library-heading">曲库</h2><p id="library-count" class="muted" aria-live="polite">正在读取</p></div>
+        <div class="batch-actions">
+          <label for="mode" class="visually-hidden">转换预设</label>
+          <select id="mode">
+            <option value="tunefree">TuneFree · 320 kbps + 原音</option>
+            <option value="qm">QM Unlock · V2 + 原音</option>
+            <option value="qmc">QMC Decoder · 仅原音</option>
+          </select>
+          <button id="convert" type="button" class="button primary" disabled>开始转换</button>
+        </div>
+      </div>
+
+      <div class="search-bar">
+        <div class="search-field">
+          <label class="visually-hidden" for="search-scope">搜索范围</label>
+          <select id="search-scope">
+            <option value="all">全部</option><option value="title">歌名</option><option value="artists">歌手</option>
+          </select>
+          <label class="visually-hidden" for="search">搜索</label>
+          <input id="search" type="search" placeholder="搜索歌名或歌手" spellcheck="false">
+        </div>
+        <label class="control">分组
+          <select id="group">
+            <option value="none">不分组</option><option value="quality">音质</option>
+            <option value="format">源格式</option><option value="artist">首位歌手</option>
+          </select>
+        </label>
+        <label class="control">排序
+          <select id="sort"><option value="asc">A → Z</option><option value="desc">Z → A</option></select>
+        </label>
+      </div>
+
+      <div class="facet-bar">
+        <label class="control">状态
+          <select id="status">
+            <option value="actionable">待处理</option><option value="all">全部状态</option>
+            <option value="pending">待转码</option><option value="original_ready">待补 MP3</option>
+            <option value="repair">待补齐</option><option value="failed">失败</option>
+            <option value="success">成功</option><option value="incomplete">下载未完成</option>
+          </select>
+        </label>
+        <label class="control">音质 <select id="quality"><option value="">全部音质</option></select></label>
+        <label class="control">源格式 <select id="format"><option value="">全部格式</option></select></label>
+        <label class="control wide">歌手 <select id="artist"><option value="">全部歌手</option></select></label>
+        <button id="clear-filters" class="button quiet" type="button">重置</button>
+      </div>
+
+      <div class="table-scroll">
+        <table class="track-table">
+          <thead><tr>
+            <th scope="col" class="check-col"><input id="select-all" type="checkbox" aria-label="选择当前筛选下所有可转歌曲"></th>
+            <th scope="col">歌曲</th><th scope="col" class="source-col">源格式与音质</th>
+            <th scope="col" class="status-col">状态</th>
+          </tr></thead>
+          <tbody id="tracks"></tbody>
+        </table>
+      </div>
+      <div id="selection-info" class="selection-info" aria-live="polite">已选 0 首</div>
+    </section>
+
+    <section id="job-panel" class="card job" aria-labelledby="job-heading" hidden>
+      <div class="job-heading"><h2 id="job-heading">批次进度</h2><strong id="job-count">0 / 0</strong></div>
+      <progress id="job-progress" value="0" max="1" aria-label="批次进度"></progress>
+      <p id="job-message" role="status"></p>
+      <ol id="job-events" class="job-events" aria-label="本批最新结果"></ol>
+    </section>
+  </main>
+
+  <dialog id="confirm" aria-labelledby="confirm-title">
+    <div class="dialog-body">
+      <h2 id="confirm-title">确认转换</h2>
+      <p id="confirm-summary"></p>
+      <div id="key-panel" hidden>
+        <p class="key-note">为下列歌曲粘贴各自的 ekey。此处只接受歌曲专用密钥，密钥仅用于本批。</p>
+        <div id="key-list" class="keys"></div>
+      </div>
+      <p id="confirm-error" class="form-error" role="alert" hidden></p>
+    </div>
+    <div class="dialog-actions">
+      <button id="cancel" class="button" type="button">取消</button>
+      <button id="ready-only" class="button" type="button" hidden>仅转换已就绪歌曲</button>
+      <button id="confirm-convert" class="button primary" type="button">确认转换</button>
+    </div>
+  </dialog>
+
+  <template id="empty-row"><tr><td class="empty" colspan="4"></td></tr></template>
+</body>
+</html>
