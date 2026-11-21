@@ -1,12 +1,26 @@
 # QQ 音乐转码平台
 
+<img src="source/web/app-icon.png" alt="紫色圆角播放键与声波应用图标" width="104" height="104" align="right">
+
 在 macOS 和 Windows 上整理 QQ 音乐的本地下载，把支持的歌曲恢复成其他播放器可播放的 **FLAC 或 OGG**，也可以额外导出 **MP3**。应用会刷新下载列表，记录转换结果，并识别已经处理过的歌曲。
 
-[下载源码 ZIP](https://github.com/cybloody-Mary/qqmusic-decoder/archive/refs/heads/main.zip) · [安装与构建](#安装与构建) · [选哪个音质模式](#选哪个音质模式) · [许可证](#许可证)
+## 下载最新版
+
+**[打开最新发布页](https://github.com/cybloody-Mary/qqmusic-decoder/releases/latest)**，或直接下载与你的电脑匹配的便携包。
+
+| 系统 | 下载 | 解压后打开 |
+| --- | --- | --- |
+| macOS 14+（Apple 芯片和 Intel） | [macOS 通用版 ZIP](https://github.com/cybloody-Mary/qqmusic-decoder/releases/latest/download/QQMusicStudio-macOS-universal.zip) | `QQ音乐转码平台.app` |
+| Windows x64（大多数 Intel / AMD 电脑） | [Windows x64 ZIP](https://github.com/cybloody-Mary/qqmusic-decoder/releases/latest/download/QQMusicStudio-Windows-x64.zip) | `Start.exe` |
+| Windows ARM64 | [Windows ARM64 ZIP](https://github.com/cybloody-Mary/qqmusic-decoder/releases/latest/download/QQMusicStudio-Windows-arm64.zip) | `Start.exe` |
+
+首次转换需要联网。应用会从 PyPI 自动下载并校验固定版本的转码组件，之后复用本机缓存。音频在本机处理。
+
+GitHub 的「Code → Download ZIP」和发布页中的「Source code」提供[源码](https://github.com/cybloody-Mary/qqmusic-decoder/archive/refs/heads/main.zip)。
 
 ## 快速使用
 
-已有便携应用包可以直接按下面操作。刚下载源码 ZIP 的话，请先[构建应用包](#安装与构建)。
+先从上方选择系统并下载。若你下载的是源码，可以按[构建步骤](#安装与构建)自行打包。
 
 1. 解压整个应用包。macOS 打开 `QQ音乐转码平台.app`。Windows 双击带紫色图标的 `Start.exe`，应用会在默认浏览器中打开。
 2. 首次启动时选择 **下载目录** 和 **导出目录**。下载目录应直接包含歌曲文件。应用会尝试识别常见路径。之后可在 macOS 的「目录设置」或 Windows 的「工作目录」中更改。默认导出到系统音乐目录下的 `QQ音乐转换`。
@@ -37,7 +51,7 @@ macOS 上，你可以逐批确认使用本机 QQ 音乐的登录状态。确认�
 
 ## 安装与构建
 
-GitHub 当前提供源码和构建脚本。上方的「下载源码 ZIP」是源码包。按下面的步骤生成便携应用包，再解压运行。依赖下载脚本会通过 SHA-256 校验固定版本的依赖，生成的应用自带 Python 和 FFmpeg。
+如果需要自行构建，可以使用下面的命令。依赖下载脚本会通过 SHA-256 校验固定版本的依赖。默认构建包含 FFmpeg。给打包命令加 `--public` 可构建与 GitHub 发布版相同的首次转换在线准备版本。
 
 先下载并解压源码，或克隆仓库。以下各平台命令均在包含 `source` 的仓库目录中执行。
 
@@ -55,7 +69,7 @@ python3 source/fetch_dependencies.py macos
 python3 source/package_portable.py macos
 ```
 
-产物 `dist/QQMusicStudio-2.0.1-macOS-universal.zip` 同时支持 Apple 芯片和 Intel 芯片。解压后打开 `QQ音乐转码平台.app`。打包默认使用临时签名。需要向其他人分发时，可使用 Developer ID 签名并提交 Apple 公证。
+产物 `dist/QQMusicStudio-2.0.2-macOS-universal.zip` 同时支持 Apple 芯片和 Intel 芯片。解压后打开 `QQ音乐转码平台.app`。打包默认使用临时签名。需要向其他人分发时，可使用 Developer ID 签名并提交 Apple 公证。
 
 如果有多个兼容的 macOS SDK，可以显式指定已安装的 SDK。例如，使用已验证过的 macOS 26.5 SDK。
 
@@ -72,10 +86,11 @@ py -3 source/fetch_dependencies.py windows-x64
 py -3 source/package_portable.py windows-x64
 ```
 
-ARM64 电脑将两条命令中的 `windows-x64` 改成 `windows-arm64`。在 `dist/` 找到对应的 `QQMusicStudio-2.0.1-Windows-x64.zip` 或 `QQMusicStudio-2.0.1-Windows-arm64.zip`，解压整个文件夹后双击 `Start.exe`。若打开失败，可用同目录的 `Start.cmd` 查看错误信息。网页服务只在本机运行，可点浏览器界面的「退出」关闭应用。
+ARM64 电脑将两条命令中的 `windows-x64` 改成 `windows-arm64`。在 `dist/` 找到对应的 `QQMusicStudio-2.0.2-Windows-x64.zip` 或 `QQMusicStudio-2.0.2-Windows-arm64.zip`，解压整个文件夹后双击 `Start.exe`。若打开失败，可用同目录的 `Start.cmd` 查看错误信息。网页服务只在本机运行，可点浏览器界面的「退出」关闭应用。
 
 ## 常见问题
 
+- **macOS 提示无法验证开发者？** GitHub 便携包使用临时签名。确认从本项目发布页下载后，可参考 Apple 关于打开未公证应用的说明。[Apple 支持](https://support.apple.com/zh-cn/102445)
 - **应用找不到歌曲怎么办？** 在 QQ 音乐客户端查看下载位置，选择实际包含歌曲文件的那一级目录。macOS 可在 Finder 中按 `⌘⇧G` 输入 `~/Library/Containers/com.tencent.QQMusicMac/Data/Library/Application Support/QQMusicMac/iQmc`。
 - **下载中的歌曲什么时候能处理？** 等 QQ 音乐完成下载后再刷新。应用识别到完整的支持格式后，会将歌曲列为待转码或显示其已有状态。
 - **只导出了原音，之后还能补 MP3 吗？** 可以。在同一个导出目录里找到该歌曲，选任一带 MP3 的模式。已通过核验的原音可以直接用于编码。

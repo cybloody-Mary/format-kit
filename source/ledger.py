@@ -16,6 +16,7 @@ import tempfile
 import time
 import unicodedata
 
+import ffmpeg_runtime
 import portable_paths
 from portable_lock import exclusive
 from tunefree_backend import qmc2
@@ -141,7 +142,7 @@ def index_audio(folder, extensions):
 
 
 def probe_mp3(path):
-    ffmpeg = HERE / ('ffmpeg.exe' if sys.platform == 'win32' else 'ffmpeg')
+    ffmpeg = ffmpeg_runtime.resolve_ffmpeg(HERE / ('ffmpeg.exe' if sys.platform == 'win32' else 'ffmpeg'))
     if ffmpeg.is_file():
         options = {'creationflags': subprocess.CREATE_NO_WINDOW} if sys.platform == 'win32' else {}
         probe = subprocess.run(

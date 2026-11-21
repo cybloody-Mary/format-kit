@@ -17,10 +17,12 @@ SOURCE = Path(__file__).resolve().parent
 ROOT = SOURCE.parent
 DIST = ROOT / 'dist'
 BUILD = ROOT / 'build'
-PROGRAM = ('studio.py', 'ledger.py', 'portable_paths.py', 'portable_lock.py', 'library_metadata.py')
+PROGRAM = ('studio.py', 'ledger.py', 'portable_paths.py', 'portable_lock.py', 'library_metadata.py',
+           'ffmpeg_runtime.py', 'fetch_dependencies.py')
 APP = 'QQ音乐转码平台'
 APP_COVER = SOURCE / 'web' / 'app-icon.png'
-VERSION = '2.0.1'
+VERSION = '2.0.2'
+ONLINE_NOTE = '首次转换时应用会从 PyPI 下载并校验转码组件，请保持网络连接。\n'
 
 
 def run(*args):
@@ -92,7 +94,9 @@ def build_windows(arch, staging, dependencies, zig):
         archive.extractall(runtime)
     (runtime / 'python314._pth').write_text('python314.zip\n.\n..\n', encoding='ascii')
     shutil.copy2(runtime / 'LICENSE.txt', folder / 'Notices' / 'Python-License.txt')
-    extract_ffmpeg(dependencies[f'ffmpeg-win-{arch}.whl'], folder / 'ffmpeg.exe')
+    ffmpeg = dependencies.get(f'ffmpeg-win-{arch}.whl')
+    if ffmpeg is not None:
+        extract_ffmpeg(ffmpeg, folder / 'ffmpeg.exe')
     (folder / 'Start.cmd').write_bytes(
         b'@echo off\r\nsetlocal\r\n"%~dp0runtime\\python.exe" -B "%~dp0win_server.py"\r\n'
         b'if errorlevel 1 pause\r\n')
@@ -103,8 +107,9 @@ def build_windows(arch, staging, dependencies, zig):
         '首次运行请确认下载目录和导出目录。之后可以在「目录设置」修改。\n'
         '可处理普通 FLAC、OGG 和支持的内嵌密钥文件。新版 musicex 需要该文件对应的单曲 ekey。\n'
         '「仅原音」保留可播放的 FLAC 或 OGG。MP3 预设会额外生成 MP3。\n'
-        '退出时，可点击界面中的「退出应用」。\n\n'
-        '应用许可见 LICENSE，第三方组件版本及许可见 Notices 文件夹。\n',
+        '退出时，可点击界面中的「退出应用」。\n'
+        + (ONLINE_NOTE if ffmpeg is None else '')
+        + '\n应用许可见 LICENSE，第三方组件版本及许可见 Notices 文件夹。\n',
         encoding='utf-8-sig')
     archive_tree(folder, DIST / f'QQMusicStudio-{VERSION}-Windows-{arch}.zip')
 
@@ -142,19 +147,23 @@ def build_mac(identity, sdk, staging, dependencies):
             '--strip-components', '1', '-C', extract)
         if not (extract / 'bin/python3').is_file():
             raise ValueError(f'Missing {arch} bundled Python')
-        ffmpeg = staging / f'ffmpeg-{arch}'
-        extract_ffmpeg(dependencies[f'ffmpeg-mac-{suffix}.whl'], ffmpeg)
-        ffmpeg_binaries.append(ffmpeg)
-    run('/usr/bin/lipo', '-create', *ffmpeg_binaries, '-output', resources / 'ffmpeg')
-    run('/usr/bin/lipo', '-create', *swift_binaries, '-output', macos / 'QQMusicStudio')
-    for executable in (resources / 'ffmpeg', macos / 'QQMusicStudio'):
-        executable.chmod(0o755)
+        if artifact := dependencies.get(f'ffmpeg-mac-{suffix}.whl'):
+            ffmpeg = staging / f'ffmpeg-{arch}'
+            extract_ffmpeg(artifact, ffmpeg)
+            ffmpeg_binaries.append(ffmpeg)
+    bundled_ffmpeg = resources / 'ffmpeg'
+    if ffmpeg_binaries:
+        run('/usr/bin/lipo', '-create', *ffmpeg_binaries, '-output', bundled_ffmpeg)
+        bundled_ffmpeg.chmod(0o755)
+    executable = macos / 'QQMusicStudio'
+    run('/usr/bin/lipo', '-create', *swift_binaries, '-output', executable)
+    executable.chmod(0o755)
     info = {
         'CFBundleIdentifier': 'local.qqmusic.conversionstudio',
         'CFBundleName': APP, 'CFBundleDisplayName': APP, 'CFBundleExecutable': 'QQMusicStudio',
         'CFBundleIconFile': 'AppIcon.icns',
         'CFBundleInfoDictionaryVersion': '6.0', 'CFBundleShortVersionString': VERSION,
-        'CFBundleVersion': '4', 'CFBundleDevelopmentRegion': 'zh-Hans', 'CFBundlePackageType': 'APPL',
+        'CFBundleVersion': '5', 'CFBundleDevelopmentRegion': 'zh-Hans', 'CFBundlePackageType': 'APPL',
         'LSMinimumSystemVersion': '14.0', 'NSHighResolutionCapable': True,
     }
     with (contents / 'Info.plist').open('wb') as handle:
@@ -162,11 +171,12 @@ def build_mac(identity, sdk, staging, dependencies):
     (resources / '使用说明.txt').write_text(
         f'QQ 音乐转码平台 {VERSION} · macOS 14+\n\n'
         '解压后打开应用。首次运行请确认下载目录和导出目录。\n'
-        '「目录设置」可随时切换，台账随导出目录保存。\n\n'
-        '应用许可见 LICENSE，第三方组件版本及许可见 Notices。\n',
+        '「目录设置」可随时切换，台账随导出目录保存。\n'
+        + (ONLINE_NOTE if not ffmpeg_binaries else '')
+        + '\n应用许可见 LICENSE，第三方组件版本及许可见 Notices。\n',
         encoding='utf-8')
     sign_flags = [] if identity == '-' else ['--options', 'runtime', '--timestamp']
-    nested = [resources / 'ffmpeg']
+    nested = [bundled_ffmpeg] if ffmpeg_binaries else []
     for file in sorted((resources / 'runtime').rglob('*')):
         if file.is_symlink() or not file.is_file():
             continue
@@ -186,6 +196,8 @@ def main():
     parser.add_argument('--sdk', type=Path, help='macOS SDK path (defaults to the active Xcode SDK)')
     parser.add_argument('--sign', default='-', help='macOS signing identity (defaults to ad-hoc signing)')
     parser.add_argument('--zig', type=Path, help='Zig executable for compiling the Windows launcher')
+    parser.add_argument('--public', action='store_true',
+                        help='build a release that downloads FFmpeg directly on first conversion')
     args = parser.parse_args()
     if args.target == 'macos' and sys.platform != 'darwin':
         parser.error('The macOS target requires macOS and an Apple Swift 6 toolchain')
@@ -193,7 +205,8 @@ def main():
     if args.target != 'macos' and zig is None:
         parser.error('Building Windows packages requires Zig. Install Zig or pass --zig PATH.')
     try:
-        dependencies = {name: pinned_file(name) for name in TARGETS[args.target]}
+        dependencies = {name: pinned_file(name) for name in TARGETS[args.target]
+                        if not args.public or not name.startswith('ffmpeg-')}
     except (OSError, ValueError) as error:
         parser.error(f'{error}. Run python3 source/fetch_dependencies.py {args.target}.')
     DIST.mkdir(exist_ok=True)

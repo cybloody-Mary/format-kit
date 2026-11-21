@@ -4,7 +4,7 @@ import argparse
 from array import array
 from collections import Counter
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import errno
 import shutil
 import hashlib
@@ -21,6 +21,7 @@ from types import SimpleNamespace
 import urllib.request
 
 BASE = Path(__file__).resolve().parent
+import ffmpeg_runtime
 import ledger
 from tunefree_backend import audio, decrypt, ekey, id3, tags, verify
 import library_metadata
@@ -461,15 +462,35 @@ def convert(settings, payload, emit=emit_event):
         raise StudioError('另一个批次正在处理，请稍后重试。') from None
 
 
-def _process_batch(settings, selected, keys, mode, authorized, emit):
+def _batch_tracks(settings, selected, keys, mode):
     rows = {row['resource']: row for row in scan(settings) if 'resource' in row}
     requested = {
         key for key in selected if key in rows and rows[key]['status'] in CONVERTIBLE
         and (mode != 'qmc' or not rows[key].get('has_original'))
     }
     missing_keys = {key for key in requested if rows[key]['needs_login'] and not keys.get(key)}
+    return rows, requested, missing_keys
+
+
+def _process_batch(settings, selected, keys, mode, authorized, emit):
+    rows, requested, missing_keys = _batch_tracks(settings, selected, keys, mode)
     if missing_keys and sys.platform == 'darwin' and not authorized:
         raise StudioError('还未授权本批需要密钥的歌曲使用 QQ 音乐登录状态。')
+    runnable = requested if sys.platform == 'darwin' else requested - missing_keys
+    if runnable:
+        try:
+            first_use = not ffmpeg_runtime.resolve_ffmpeg(settings.ffmpeg).is_file()
+            if first_use:
+                emit({'event': 'progress', 'done': 0, 'total': len(selected),
+                      'message': '正在下载并校验转码组件，请保持网络连接。'})
+            settings = replace(settings, ffmpeg=ffmpeg_runtime.ensure_ffmpeg(settings.ffmpeg))
+        except ffmpeg_runtime.FFmpegError as exc:
+            raise StudioError(str(exc)) from None
+        if first_use:
+            rows, requested, refreshed_keys = _batch_tracks(settings, selected, keys, mode)
+            if sys.platform == 'darwin' and refreshed_keys - missing_keys:
+                raise StudioError('准备转码组件时，本批歌曲的状态发生变化，请刷新后重新确认。')
+            missing_keys = refreshed_keys
     old_credentials = ekey.get_credentials
     old_opener = urllib.request._opener
     counts = Counter()
