@@ -2,7 +2,7 @@
 
 在 macOS 和 Windows 上整理 QQ 音乐的本地下载，把支持的歌曲恢复成其他播放器可播放的 **FLAC 或 OGG**，也可以额外导出 **MP3**。应用会刷新下载列表，记录转换结果，并识别已经处理过的歌曲。
 
-[下载源码 ZIP](https://github.com/cybloody-Mary/qqmusic-studio/archive/refs/heads/main.zip) · [安装与构建](#安装与构建) · [选哪个音质模式](#选哪个音质模式) · [许可证](#许可证)
+[下载源码 ZIP](https://github.com/cybloody-Mary/qqmusic-decoder/archive/refs/heads/main.zip) · [安装与构建](#安装与构建) · [选哪个音质模式](#选哪个音质模式) · [许可证](#许可证)
 
 ## 快速使用
 
@@ -42,8 +42,8 @@ GitHub 当前提供源码和构建脚本。上方的「下载源码 ZIP」是源
 先下载并解压源码，或克隆仓库。以下各平台命令均在包含 `source` 的仓库目录中执行。
 
 ```sh
-git clone https://github.com/cybloody-Mary/qqmusic-studio.git
-cd qqmusic-studio
+git clone https://github.com/cybloody-Mary/qqmusic-decoder.git
+cd qqmusic-decoder
 ```
 
 ### macOS 14 或更新版本
