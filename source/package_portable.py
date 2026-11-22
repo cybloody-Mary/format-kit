@@ -1,20 +1,22 @@
 """Build portable release archives from source and checksum-verified runtimes."""
 
 import argparse
+import os
 from pathlib import Path
 import plistlib
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import zipfile
 
 from fetch_dependencies import ARTIFACTS, TARGETS, pinned_file
 from package_macos_icon import build_macos_icon
-from package_windows_launcher import build_windows_launcher
 
 SOURCE = Path(__file__).resolve().parent
 ROOT = SOURCE.parent
+WINDOWS = ROOT / 'windows'
 DIST = ROOT / 'dist'
 BUILD = ROOT / 'build'
 PROGRAM = ('studio.py', 'ledger.py', 'portable_paths.py', 'portable_lock.py', 'library_metadata.py',
@@ -29,14 +31,12 @@ def run(*args):
     subprocess.run([str(arg) for arg in args], check=True)
 
 
-def copy_program(destination, *, web=False):
+def copy_program(destination):
     destination.mkdir(parents=True, exist_ok=True)
-    for name in PROGRAM + (('win_server.py',) if web else ()):
+    for name in PROGRAM:
         shutil.copy2(SOURCE / name, destination / name)
     for document in ('LICENSE', 'NOTICE'):
         shutil.copy2(ROOT / document, destination / document)
-    if web:
-        shutil.copytree(SOURCE / 'web', destination / 'web')
     shutil.copytree(SOURCE / 'tunefree_backend', destination / 'tunefree_backend',
                     ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
     shutil.copytree(SOURCE / 'Notices', destination / 'Notices')
@@ -53,7 +53,7 @@ def copy_program(destination, *, web=False):
         'LAME upstream source\nhttps://sourceforge.net/projects/lame/files/lame/3.100/\n',
         encoding='utf-8')
     (destination / 'Notices' / 'Artifact-SHA256.txt').write_text(
-        ''.join(f'{digest}  {name}\n' for name, (_, digest) in ARTIFACTS.items()), encoding='utf-8')
+        ''.join(f'{ARTIFACTS[name][1]}  {name}\n' for name in TARGETS['macos']), encoding='utf-8')
 
 
 def extract_ffmpeg(artifact, destination):
@@ -83,35 +83,59 @@ def archive_tree(folder, target):
     print(target, flush=True)
 
 
-def build_windows(arch, staging, dependencies, zig):
-    folder = staging / 'QQMusicStudio'
-    copy_program(folder, web=True)
-    build_windows_launcher(arch, folder / 'Start.exe', staging, zig)
-    shutil.copy2(SOURCE / 'WindowsLauncher-Notices.txt', folder / 'Notices' / 'WindowsLauncher-Notices.txt')
+def build_windows(staging, dependencies, go, clang):
+    folder = staging / 'QQMusicDecoder'
+    folder.mkdir()
+    for name in ('catalog.py', 'server.py', '使用说明.md', 'choose-path.ps1',
+                 'Start QQ Music Decoder.cmd'):
+        path = WINDOWS / name
+        if path.suffix in {'.cmd', '.ps1'}:
+            (folder / name).write_bytes(path.read_bytes().replace(b'\r\n', b'\n').replace(b'\n', b'\r\n'))
+        else:
+            shutil.copy2(path, folder / name)
+    for name in ('web', 'licenses'):
+        shutil.copytree(WINDOWS / name, folder / name)
+    for name in ('LICENSE', 'NOTICE'):
+        shutil.copy2(ROOT / name, folder / name)
+
     runtime = folder / 'runtime'
     runtime.mkdir()
-    with zipfile.ZipFile(dependencies[f'python-win-{arch}.zip']) as archive:
+    with zipfile.ZipFile(dependencies['python-win-x64.zip']) as archive:
         archive.extractall(runtime)
-    (runtime / 'python314._pth').write_text('python314.zip\n.\n..\n', encoding='ascii')
-    shutil.copy2(runtime / 'LICENSE.txt', folder / 'Notices' / 'Python-License.txt')
-    ffmpeg = dependencies.get(f'ffmpeg-win-{arch}.whl')
-    if ffmpeg is not None:
-        extract_ffmpeg(ffmpeg, folder / 'ffmpeg.exe')
-    (folder / 'Start.cmd').write_bytes(
-        b'@echo off\r\nsetlocal\r\n"%~dp0runtime\\python.exe" -B "%~dp0win_server.py"\r\n'
-        b'if errorlevel 1 pause\r\n')
-    (folder / '使用说明.txt').write_text(
-        f'QQ 音乐转码平台 {VERSION} · Windows {arch}\n\n'
-        '解压整个文件夹后，双击带紫色图标的 Start.exe。默认浏览器会打开本机界面。\n'
-        '如需排查启动问题，可运行同目录的 Start.cmd 查看错误信息。\n'
-        '首次运行请确认下载目录和导出目录。之后可以在「目录设置」修改。\n'
-        '可处理普通 FLAC、OGG 和支持的内嵌密钥文件。新版 musicex 需要该文件对应的单曲 ekey。\n'
-        '「仅原音」保留可播放的 FLAC 或 OGG。MP3 预设会额外生成 MP3。\n'
-        '退出时，可点击界面中的「退出应用」。\n'
-        + (ONLINE_NOTE if ffmpeg is None else '')
-        + '\n应用许可见 LICENSE，第三方组件版本及许可见 Notices 文件夹。\n',
-        encoding='utf-8-sig')
-    archive_tree(folder, DIST / f'QQMusicStudio-{VERSION}-Windows-{arch}.zip')
+    (runtime / 'python313._pth').write_bytes(b'python313.zip\r\n.\r\n..\r\n')
+
+    engine = folder / 'engine'
+    engine.mkdir()
+    extract_ffmpeg(dependencies['ffmpeg-win-x64.whl'], engine / 'ffmpeg.exe')
+
+    sources = folder / 'source'
+    sources.mkdir()
+    with tarfile.open(dependencies['kugo-v0.6.1.tar.gz']) as archive:
+        archive.extractall(sources, filter='data')
+    kugo = sources / 'kugo-engine'
+    (sources / 'Kugo-Music-Converter-0.6.1').rename(kugo)
+    shutil.copy2(WINDOWS / 'engine' / 'protocol_output.go',
+                 kugo / 'backend' / 'internal' / 'logger' / 'protocol_output.go')
+    command = kugo / 'backend' / 'cmd' / 'qqmusic-decoder-engine'
+    command.mkdir()
+    shutil.copy2(WINDOWS / 'engine' / 'main.go', command / 'main.go')
+    launcher = sources / 'launcher'
+    shutil.copytree(WINDOWS / 'launcher', launcher)
+    shutil.copy2(WINDOWS / 'BUILD.md', sources / '编译说明.md')
+    icon = launcher / 'icon_windows_amd64.syso'
+    run(sys.executable, launcher / 'icon_resource.py', folder / 'web' / 'cover.png',
+        icon, '--clang', clang)
+
+    env = dict(os.environ, GOOS='windows', GOARCH='amd64', CGO_ENABLED='0')
+    options = [str(go), 'build', '-trimpath', '-buildvcs=false']
+    subprocess.run(options + ['-ldflags=-s -w', '-o', engine / 'qqmusic-decoder-engine.exe',
+                              './cmd/qqmusic-decoder-engine'],
+                   cwd=kugo / 'backend', env=env, check=True)
+    subprocess.run(options + ['-ldflags=-s -w -H=windowsgui', '-o',
+                              folder / 'Start QQ Music Decoder.exe', '.'],
+                   cwd=launcher, env=env, check=True)
+    icon.unlink()
+    archive_tree(folder, DIST / 'QQMusicStudio-Windows-x64.zip')
 
 
 def active_macos_sdk():
@@ -195,18 +219,20 @@ def main():
     parser.add_argument('target', choices=TARGETS)
     parser.add_argument('--sdk', type=Path, help='macOS SDK path (defaults to the active Xcode SDK)')
     parser.add_argument('--sign', default='-', help='macOS signing identity (defaults to ad-hoc signing)')
-    parser.add_argument('--zig', type=Path, help='Zig executable for compiling the Windows launcher')
+    parser.add_argument('--go', type=Path, help='Go executable for compiling the Windows engine')
+    parser.add_argument('--clang', type=Path, help='Clang executable for compiling the Windows icon')
     parser.add_argument('--public', action='store_true',
-                        help='build a release that downloads FFmpeg directly on first conversion')
+                        help='have the macOS release download FFmpeg at first conversion')
     args = parser.parse_args()
     if args.target == 'macos' and sys.platform != 'darwin':
         parser.error('The macOS target requires macOS and an Apple Swift 6 toolchain')
-    zig = args.zig or shutil.which('zig')
-    if args.target != 'macos' and zig is None:
-        parser.error('Building Windows packages requires Zig. Install Zig or pass --zig PATH.')
+    go = str(args.go.resolve()) if args.go else shutil.which('go')
+    clang = str(args.clang.resolve()) if args.clang else shutil.which('clang')
+    if args.target == 'windows-x64' and not (go and clang):
+        parser.error('The Windows x64 bundle requires Go and Clang.')
     try:
         dependencies = {name: pinned_file(name) for name in TARGETS[args.target]
-                        if not args.public or not name.startswith('ffmpeg-')}
+                        if args.target != 'macos' or not args.public or not name.startswith('ffmpeg-')}
     except (OSError, ValueError) as error:
         parser.error(f'{error}. Run python3 source/fetch_dependencies.py {args.target}.')
     DIST.mkdir(exist_ok=True)
@@ -216,7 +242,7 @@ def main():
         if args.target == 'macos':
             build_mac(args.sign, args.sdk, staging, dependencies)
         else:
-            build_windows(args.target.removeprefix('windows-'), staging, dependencies, zig)
+            build_windows(staging, dependencies, go, clang)
 
 
 if __name__ == '__main__':

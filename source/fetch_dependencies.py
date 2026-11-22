@@ -9,7 +9,7 @@ from urllib.request import urlopen
 
 DOWNLOADS = Path(__file__).resolve().parent.parent / 'downloads'
 ASTRAL = 'https://github.com/astral-sh/python-build-standalone/releases/download/20261110/'
-PYTHON = 'https://www.python.org/ftp/python/3.14.10/'
+PYTHON = 'https://www.python.org/ftp/python/3.13.17/'
 PYPI = 'https://files.pythonhosted.org/packages/'
 ARTIFACTS = {
     'python-mac-arm64.tar.gz': (
@@ -21,12 +21,12 @@ ARTIFACTS = {
         '85f8e54798e8e6aa58d2253f013d815c5616343cc0d15cbea882fca78bdfeae2',
     ),
     'python-win-x64.zip': (
-        PYTHON + 'python-3.14.10-embed-amd64.zip',
-        '90905e64a840557d8c1bc4f5b74db3d7ee85e3ffb217611cac1c7813acea4159',
+        PYTHON + 'python-3.13.17-embed-amd64.zip',
+        '9e35319bffedab8b36ad44d8f377cb4f1733bcec257a0b6d04d94f01486ddb38',
     ),
-    'python-win-arm64.zip': (
-        PYTHON + 'python-3.14.10-embed-arm64.zip',
-        'bbe116bb1248820359cbf25127ac5c7794ea161869d83686cfbc9a45203ff836',
+    'kugo-v0.6.1.tar.gz': (
+        'https://codeload.github.com/skxxxkx666/Kugo-Music-Converter/tar.gz/refs/tags/v0.6.1',
+        'df0110f027ec749440d43dfa5a77d19cfef10aed04acf86d8934d476e1ee4bb1',
     ),
     'ffmpeg-mac-arm64.whl': (
         PYPI + '2b/47/9f9b654f853598bae0850fa22bba168103e45d31b5a2a893ed474f28d54a/'
@@ -43,17 +43,11 @@ ARTIFACTS = {
         'imageio_ffmpeg-0.8.1-py3-none-win_amd64.whl',
         'f27ca4cb85e2d4946deedbce1a81245dfd942a2bcf94b53676fb3956aa95bf1b',
     ),
-    'ffmpeg-win-arm64.whl': (
-        PYPI + 'ee/39/ab95a2afd202772a69aab1fa5015f13b038f289c8617242cc5eebd0ec0e1/'
-        'imageio_ffmpeg-0.8.1-py3-none-win_arm64.whl',
-        '0b7079e63dc34f97e43db5a5b7b9efb85edc1c6623313e0a4a17ebc7c2ce7a51',
-    ),
 }
 TARGETS = {
     'macos': ('python-mac-arm64.tar.gz', 'python-mac-x64.tar.gz',
               'ffmpeg-mac-arm64.whl', 'ffmpeg-mac-x64.whl'),
-    'windows-x64': ('python-win-x64.zip', 'ffmpeg-win-x64.whl'),
-    'windows-arm64': ('python-win-arm64.zip', 'ffmpeg-win-arm64.whl'),
+    'windows-x64': ('python-win-x64.zip', 'ffmpeg-win-x64.whl', 'kugo-v0.6.1.tar.gz'),
 }
 
 

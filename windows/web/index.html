@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f1fc">
+  <title>QQ Music Decoder</title>
+  <link rel="icon" href="/cover.png">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="layout" id="app">
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="QQ Music Decoder 首页">
+        <img src="/cover.png" width="46" height="46" alt="">
+        <span><strong>QQ Music</strong><small>DECODER</small></span>
+      </a>
+      <nav aria-label="主菜单">
+        <button type="button" class="nav active" data-view="library" aria-current="page"><span data-icon="music"></span>歌曲库</button>
+        <button type="button" class="nav" data-view="history"><span data-icon="history"></span>转换历史 <span id="history-count" class="nav-count" hidden></span></button>
+      </nav>
+      <div class="sidebar-actions">
+        <button type="button" id="sidebar-settings" class="nav settings-nav"><span data-icon="settings"></span>目录设置</button>
+        <button type="button" id="exit-app" class="nav exit-nav" aria-label="退出应用"><span data-icon="exit"></span><span class="exit-label">退出应用</span></button>
+      </div>
+    </aside>
+    <main>
+      <header class="page-head">
+        <div>
+          <h1 id="heading">歌曲库</h1>
+          <p id="subtitle">整理 QQ 音乐下载，导出到你常用的播放器。</p>
+        </div>
+        <div class="head-actions">
+          <button type="button" id="open-output" class="button secondary"><span data-icon="folder"></span>打开导出目录</button>
+          <button type="button" id="open-settings" class="button secondary"><span data-icon="settings"></span>目录设置</button>
+        </div>
+      </header>
+
+      <section id="active-batch" class="batch-active" aria-labelledby="batch-heading" hidden>
+        <div class="batch-line">
+          <div><h2 id="batch-heading"></h2><p id="batch-description"></p></div>
+          <button type="button" class="button secondary" id="cancel-batch">取消批次</button>
+        </div>
+        <div class="batch-progress">
+          <progress id="batch-progress" aria-label="批次进度"></progress>
+          <span id="batch-count" class="batch-count"></span>
+        </div>
+      </section>
+      <div id="notice" class="notice" role="status" hidden></div>
+
+      <section id="library">
+        <section class="stats" aria-label="歌曲统计" id="stats"></section>
+        <section class="panel" aria-labelledby="list-title">
+          <header class="panel-bar">
+            <div class="panel-title"><h2 id="list-title">下载歌曲</h2><span id="visible-count"></span></div>
+            <button type="button" id="refresh" class="button quiet"><span data-icon="refresh"></span>刷新目录</button>
+          </header>
+          <div class="filters">
+            <label class="search"><span data-icon="search"></span><input type="search" id="search" placeholder="按歌名或歌手搜索" aria-label="按歌名或歌手搜索"></label>
+            <label class="select-wrap"><span class="sr-only">音质</span><select id="quality"><option value="">全部音质</option></select></label>
+            <label class="select-wrap"><span class="sr-only">源格式</span><select id="format-filter"><option value="">全部格式</option></select></label>
+            <label class="select-wrap"><span class="sr-only">歌手</span><select id="artist"><option value="">全部歌手</option></select></label>
+            <label class="select-wrap"><span class="sr-only">分组</span><select id="group"><option value="">不分组</option><option value="quality">按音质分组</option><option value="format">按格式分组</option><option value="artist">按歌手分组</option></select></label>
+            <button type="button" id="sort" class="button quiet" aria-label="切换歌曲排序"><span data-icon="sort"></span><span id="sort-label">A → Z</span></button>
+          </div>
+          <div id="table-wrap" class="table-wrap" hidden>
+            <table>
+              <thead><tr>
+                <th class="check-cell"><input type="checkbox" id="select-all" aria-label="选择当前筛选中的歌曲"></th>
+                <th scope="col">歌名 / 歌手</th><th scope="col">音质</th><th scope="col">源格式</th><th scope="col">状态</th>
+              </tr></thead>
+              <tbody id="songs"></tbody>
+            </table>
+          </div>
+          <div id="empty" class="empty"></div>
+        </section>
+        <footer class="selection-bar">
+          <div class="selected"><span class="selection-icon" data-icon="music"></span><span id="selected-count">已选 0 首</span></div>
+          <label class="select-wrap"><span class="sr-only">输出方式</span><select id="format"><option value="copy">保持原格式</option><option value="mp3">MP3</option></select></label>
+          <label class="select-wrap" id="bitrate-wrap" hidden><span class="sr-only">MP3 音质</span><select id="bitrate"><option value="0">V0 · 约 245 kbps</option><option value="2">V2 · 约 190 kbps</option><option value="5">V5 · 约 130 kbps</option><option value="7">V7 · 约 100 kbps</option></select></label>
+          <button type="button" id="create-batch" class="button primary" disabled><span data-icon="play"></span>开始转换</button>
+        </footer>
+      </section>
+
+      <section id="history" class="panel history" aria-labelledby="history-title" hidden>
+        <header class="panel-bar"><div class="panel-title"><h2 id="history-title">批次记录</h2></div></header>
+        <div id="history-items"></div>
+      </section>
+    </main>
+  </div>
+  <section id="stopped" class="stopped" hidden>
+    <img src="/cover.png" width="56" height="56" alt="">
+    <h1 id="stopped-heading" tabindex="-1">应用已退出</h1>
+    <p>可以关闭此页面。再次使用时，请打开 Windows 启动器。</p>
+  </section>
+  <dialog id="settings-dialog">
+    <form id="settings-form">
+      <header class="dialog-head">
+        <div><h2>目录设置</h2><p>从下载目录发现歌曲，完成后写入导出目录。</p></div>
+        <button type="button" class="button quiet icon-only" id="close-settings" aria-label="关闭设置"><span data-icon="close"></span></button>
+      </header>
+      <div class="fields">
+        <label for="input_dir">QQ 音乐下载目录</label>
+        <div class="path-control"><input type="text" id="input_dir" placeholder="例如 D:\Music\VipSongsDownload" autocomplete="off"><button type="button" class="button secondary" data-pick="input_dir">浏览…</button></div>
+        <label for="output_dir">导出目录</label>
+        <div class="path-control"><input type="text" id="output_dir" placeholder="例如 D:\Music\Exported" autocomplete="off"><button type="button" class="button secondary" data-pick="output_dir">浏览…</button></div>
+        <p id="settings-error" class="field-error" role="alert" hidden></p>
+      </div>
+      <footer class="dialog-foot"><button class="button primary" type="submit" id="save-settings">保存设置</button></footer>
+    </form>
+  </dialog>
+  <template id="empty-template">
+    <div class="empty-icon" data-icon="music"></div>
+    <h3></h3>
+    <p></p>
+  </template>
+</body>
+</html>

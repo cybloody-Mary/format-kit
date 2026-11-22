@@ -1,7 +1,12 @@
 Required Notice: Copyright (c) 2026 cybloody-Mary (https://github.com/cybloody-Mary)
 
 The PolyForm Noncommercial License in LICENSE applies to the original project
-code, documentation, and original modifications. Third-party material retains
-its original terms. The upstream TuneFree for Mac code in
+code and documentation, subject to the notices below. Third-party material
+retains its original terms. The upstream TuneFree for Mac code in
 source/tunefree_backend/ is provided under the MIT license in that directory.
 The third-party dependency notices in source/Notices/ retain their own terms.
+
+The Windows conversion engine is based on Kugo Music Converter v0.6.1.
+Kugo and the integration code in windows/engine/ use GPL-3.0.
+See windows/licenses/KUGO-GPL-3.0.txt and windows/licenses/第三方组件.md.
+The Windows browser UI, launcher, and local service are separate project code.

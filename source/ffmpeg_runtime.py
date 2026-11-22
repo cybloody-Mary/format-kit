@@ -8,7 +8,6 @@ import shutil
 import ssl
 import stat
 import sys
-import sysconfig
 import tempfile
 import time
 from urllib.error import URLError
@@ -39,18 +38,13 @@ _WHEELS = {
                                '591260c945d0eef150e3bf82b0ef988bd36a9cecc18ff05d6679617159f0a95e'),
     ('darwin', 'x86_64'): _Wheel('ffmpeg-mac-x64.whl', 'ffmpeg-macos-x86_64-v9.0.2', 80827688,
                                 'a45b462cf91ed89148ae218c4577e30896485d7a6792c3673bcf5f823fa01b63'),
-    ('win32', 'amd64'): _Wheel('ffmpeg-win-x64.whl', 'ffmpeg-win-x86_64-v9.0.2.exe', 105423872,
-                             '3256173f3f8bffd7df12227c68adf68025edb1832273a9530688a7bb1ed8edec'),
-    ('win32', 'arm64'): _Wheel('ffmpeg-win-arm64.whl', 'ffmpeg-win-aarch64-v9.0.1.exe', 78507008,
-                             'a169b9d26b2380be66211022525c9ac16affc923ba05b561024e57c5ed4281f9'),
 }
 _MAX_WHEEL_SIZE = 64 << 20
 _VERIFIED_CACHE = {}
 
 
 def _host_wheel():
-    arch = (sysconfig.get_platform().removeprefix('win-') if sys.platform == 'win32'
-            else platform.machine()).lower()
+    arch = platform.machine().lower()
     wheel = _WHEELS.get((sys.platform, arch))
     if wheel is None:
         raise FFmpegError('当前系统或处理器架构没有对应的 FFmpeg 下载。')
