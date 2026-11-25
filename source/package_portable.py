@@ -238,7 +238,9 @@ def main():
         parser.error(f'{error}. Run python3 source/fetch_dependencies.py {args.target}.')
     DIST.mkdir(exist_ok=True)
     BUILD.mkdir(exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix=f'{args.target}-', dir=BUILD) as name:
+    # A synced project folder can reapply Finder attributes to .app directories.
+    staging_root = None if args.target == 'macos' else BUILD
+    with tempfile.TemporaryDirectory(prefix=f'{args.target}-', dir=staging_root) as name:
         staging = Path(name)
         if args.target == 'macos':
             build_mac(args.sign, args.sdk, staging, dependencies)
