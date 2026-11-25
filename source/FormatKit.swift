@@ -629,7 +629,7 @@ private final class StudioModel: ObservableObject {
         directoryError = nil
         let paths = inventory.paths
         let defaultExport = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Music/QQ音乐转换").path
+            .appendingPathComponent("Music/Format Kit 导出").path
         let suggestedSource = paths?.suggestedSource ?? ""
         let suggestedExport = paths?.suggestedExport.isEmpty == false
             ? paths?.suggestedExport ?? defaultExport : defaultExport
@@ -1101,7 +1101,7 @@ private struct StudioView: View {
             .frame(width: 46, height: 46)
             .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
-                Text("QQ 音乐转码")
+                Text("Format Kit")
                     .font(.system(size: 23, weight: .semibold))
                 Text("筛选歌曲、导出音频、查询转换结果")
                     .font(.system(size: 12))
@@ -1469,9 +1469,9 @@ private struct StudioView: View {
 }
 
 @main
-struct QQMusicStudio: App {
+struct FormatKit: App {
     var body: some Scene {
-        Window("QQ 音乐转码", id: "studio") {
+        Window("Format Kit", id: "format-kit") {
             StudioView()
                 .tint(Color(red: 0.28, green: 0.35, blue: 0.84))
         }

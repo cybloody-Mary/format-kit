@@ -21,9 +21,9 @@ DIST = ROOT / 'dist'
 BUILD = ROOT / 'build'
 PROGRAM = ('studio.py', 'ledger.py', 'portable_paths.py', 'portable_lock.py', 'library_metadata.py',
            'ffmpeg_runtime.py', 'fetch_dependencies.py')
-APP = 'QQ音乐转码平台'
+APP = 'Format Kit'
 APP_COVER = SOURCE / 'web' / 'app-icon.png'
-VERSION = '2.0.2'
+VERSION = '2.0.4'
 ONLINE_NOTE = '首次转换时应用会从 PyPI 下载并校验转码组件，请保持网络连接。\n'
 
 
@@ -84,10 +84,10 @@ def archive_tree(folder, target):
 
 
 def build_windows(staging, dependencies, go, clang):
-    folder = staging / 'QQMusicDecoder'
+    folder = staging / 'FormatKit'
     folder.mkdir()
     for name in ('catalog.py', 'server.py', '使用说明.md', 'choose-path.ps1',
-                 'Start QQ Music Decoder.cmd'):
+                 'Start Format Kit.cmd'):
         path = WINDOWS / name
         if path.suffix in {'.cmd', '.ps1'}:
             (folder / name).write_bytes(path.read_bytes().replace(b'\r\n', b'\n').replace(b'\n', b'\r\n'))
@@ -116,7 +116,7 @@ def build_windows(staging, dependencies, go, clang):
     (sources / 'Kugo-Music-Converter-0.6.1').rename(kugo)
     shutil.copy2(WINDOWS / 'engine' / 'protocol_output.go',
                  kugo / 'backend' / 'internal' / 'logger' / 'protocol_output.go')
-    command = kugo / 'backend' / 'cmd' / 'qqmusic-decoder-engine'
+    command = kugo / 'backend' / 'cmd' / 'format-kit-engine'
     command.mkdir()
     shutil.copy2(WINDOWS / 'engine' / 'main.go', command / 'main.go')
     launcher = sources / 'launcher'
@@ -128,14 +128,14 @@ def build_windows(staging, dependencies, go, clang):
 
     env = dict(os.environ, GOOS='windows', GOARCH='amd64', CGO_ENABLED='0')
     options = [str(go), 'build', '-trimpath', '-buildvcs=false']
-    subprocess.run(options + ['-ldflags=-s -w', '-o', engine / 'qqmusic-decoder-engine.exe',
-                              './cmd/qqmusic-decoder-engine'],
+    subprocess.run(options + ['-ldflags=-s -w', '-o', engine / 'format-kit-engine.exe',
+                              './cmd/format-kit-engine'],
                    cwd=kugo / 'backend', env=env, check=True)
     subprocess.run(options + ['-ldflags=-s -w -H=windowsgui', '-o',
-                              folder / 'Start QQ Music Decoder.exe', '.'],
+                              folder / 'Start Format Kit.exe', '.'],
                    cwd=launcher, env=env, check=True)
     icon.unlink()
-    archive_tree(folder, DIST / 'QQMusicStudio-Windows-x64.zip')
+    archive_tree(folder, DIST / 'FormatKit-Windows-x64.zip')
 
 
 def active_macos_sdk():
@@ -160,10 +160,10 @@ def build_mac(identity, sdk, staging, dependencies):
     swift_binaries = []
     ffmpeg_binaries = []
     for arch, suffix in (('arm64', 'arm64'), ('x86_64', 'x64')):
-        swift = staging / f'MacStudio-{arch}'
+        swift = staging / f'FormatKit-{arch}'
         run('/usr/bin/xcrun', 'swiftc', '-sdk', sdk, '-parse-as-library',
             '-target', f'{arch}-apple-macos14.0', '-module-cache-path', BUILD / f'swift-cache-{arch}',
-            '-O', SOURCE / 'QQMusicStudio.swift', '-o', swift)
+            '-O', SOURCE / 'FormatKit.swift', '-o', swift)
         swift_binaries.append(swift)
         extract = resources / 'runtime' / arch
         extract.mkdir(parents=True)
@@ -179,26 +179,27 @@ def build_mac(identity, sdk, staging, dependencies):
     if ffmpeg_binaries:
         run('/usr/bin/lipo', '-create', *ffmpeg_binaries, '-output', bundled_ffmpeg)
         bundled_ffmpeg.chmod(0o755)
-    executable = macos / 'QQMusicStudio'
+    executable = macos / 'FormatKit'
     run('/usr/bin/lipo', '-create', *swift_binaries, '-output', executable)
     executable.chmod(0o755)
     info = {
-        'CFBundleIdentifier': 'local.qqmusic.conversionstudio',
-        'CFBundleName': APP, 'CFBundleDisplayName': APP, 'CFBundleExecutable': 'QQMusicStudio',
+        'CFBundleIdentifier': 'io.github.cybloody-mary.format-kit',
+        'CFBundleName': APP, 'CFBundleDisplayName': APP, 'CFBundleExecutable': 'FormatKit',
         'CFBundleIconFile': 'AppIcon.icns',
         'CFBundleInfoDictionaryVersion': '6.0', 'CFBundleShortVersionString': VERSION,
-        'CFBundleVersion': '5', 'CFBundleDevelopmentRegion': 'zh-Hans', 'CFBundlePackageType': 'APPL',
+        'CFBundleVersion': '6', 'CFBundleDevelopmentRegion': 'zh-Hans', 'CFBundlePackageType': 'APPL',
         'LSMinimumSystemVersion': '14.0', 'NSHighResolutionCapable': True,
     }
     with (contents / 'Info.plist').open('wb') as handle:
         plistlib.dump(info, handle)
     (resources / '使用说明.txt').write_text(
-        f'QQ 音乐转码平台 {VERSION} · macOS 14+\n\n'
+        f'{APP} {VERSION} · macOS 14+\n\n'
         '解压后打开应用。首次运行请确认下载目录和导出目录。\n'
         '「目录设置」可随时切换，台账随导出目录保存。\n'
         + (ONLINE_NOTE if not ffmpeg_binaries else '')
         + '\n应用许可见 LICENSE，第三方组件版本及许可见 Notices。\n',
         encoding='utf-8')
+    run('/usr/bin/xattr', '-cr', app)
     sign_flags = [] if identity == '-' else ['--options', 'runtime', '--timestamp']
     nested = [bundled_ffmpeg] if ffmpeg_binaries else []
     for file in sorted((resources / 'runtime').rglob('*')):
@@ -211,7 +212,7 @@ def build_mac(identity, sdk, staging, dependencies):
     run('/usr/bin/codesign', '--force', '--sign', identity, *sign_flags, *nested)
     run('/usr/bin/codesign', '--force', '--sign', identity, *sign_flags, app)
     run('/usr/bin/codesign', '--verify', '--deep', '--strict', app)
-    archive_tree(app, DIST / f'QQMusicStudio-{VERSION}-macOS-universal.zip')
+    archive_tree(app, DIST / 'FormatKit-macOS-universal.zip')
 
 
 def main():

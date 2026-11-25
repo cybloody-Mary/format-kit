@@ -1,4 +1,4 @@
-"""Local backend for the QQ Music conversion studio."""
+"""Local backend for Format Kit."""
 
 import argparse
 from array import array
@@ -57,8 +57,8 @@ def local_settings():
         return None
     source, export = paths
     ffmpeg = BASE / ('ffmpeg.exe' if sys.platform == 'win32' else 'ffmpeg')
-    return Settings(source, export, export / '.qqmusic-ledger.json',
-                    export / 'QQ音乐转码清单.txt', ffmpeg)
+    return Settings(source, export, export / '.format-kit-ledger.json',
+                    export / 'Format Kit 转码清单.txt', ffmpeg)
 
 
 def config_inventory(payload):
@@ -408,7 +408,7 @@ def process_track(settings, row, mode, song_key=None, *, allow_key_fetch=False):
     if settings.export.is_symlink():
         raise StudioError('导出目录是符号链接，请核对音乐目录。')
     settings.export.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix='.qqmusic-convert-', dir=settings.export) as folder:
+    with tempfile.TemporaryDirectory(prefix='.format-kit-convert-', dir=settings.export) as folder:
         temporary_dir = Path(folder)
         if not row.get('has_original'):
             staged_original = temporary_dir / (source.stem + ledger.ORIGINAL_TYPES[source.suffix.lower()])

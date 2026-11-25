@@ -22,7 +22,7 @@ def qa_backend(backend, work):
     source = work/'下载 文件夹'
     source.mkdir()
     export = work/'导出 文件夹'
-    env = dict(os.environ, QQMUSIC_STUDIO_HOME=str(work/'首次启动 用户目录'))
+    env = dict(os.environ, FORMAT_KIT_HOME=str(work/'首次启动 用户目录'))
     [startup] = run(backend,'inventory',env=env)
     assert startup['paths']['configured'] is False and not startup['rows']
     assert not export.exists()
@@ -44,7 +44,7 @@ def qa_backend(backend, work):
     assert complete['success']==1 and (export/'MP3'/source_file.with_suffix('.mp3').name).is_file()
     [*_, complete] = run(backend,'convert',{'selected':[track['id']],'mode':'tunefree'},env)
     assert complete['skipped']==1
-    assert (export/'.qqmusic-ledger.json').is_file()
+    assert (export/'.format-kit-ledger.json').is_file()
     new_export = work/'另一目录'
     [changed] = run(backend,'configure',{'source':str(source),'export':str(new_export)},env)
     assert changed['summary']['pending']==1

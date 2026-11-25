@@ -1,4 +1,4 @@
-// QQ Music Decoder starts its browser interface with an adjacent Python runtime.
+// Format Kit starts its browser interface with an adjacent Python runtime.
 package main
 
 import (
@@ -12,7 +12,7 @@ import (
 	"unsafe"
 )
 
-const windowTitle = "QQ Music Decoder"
+const windowTitle = "Format Kit"
 
 func main() {
 	if err := run(); err != nil {

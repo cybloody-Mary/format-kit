@@ -16,7 +16,7 @@ from studio import restore_audio as real_restore_audio
 
 
 WORK = Path(__file__).resolve().parents[1]
-FFMPEG = Path(os.environ.get('QQMUSIC_TEST_FFMPEG', WORK / 'ffmpeg')).resolve()
+FFMPEG = Path(os.environ.get('FORMAT_KIT_TEST_FFMPEG', WORK / 'ffmpeg')).resolve()
 
 
 def write_musicex(source, song, media_id, resource_name):
@@ -38,7 +38,7 @@ def ffmpeg(*args):
 class StudioIntegrationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        temporary = tempfile.TemporaryDirectory(prefix='qqmusic-studio-fixtures-')
+        temporary = tempfile.TemporaryDirectory(prefix='format-kit-fixtures-')
         cls.addClassCleanup(temporary.cleanup)
         root = Path(temporary.name)
         cls.original = root / 'sample.flac'
@@ -48,7 +48,7 @@ class StudioIntegrationTest(unittest.TestCase):
         ffmpeg('-i', cls.original, '-c:a', 'libmp3lame', '-b:a', '320k', cls.mp3)
 
     def setUp(self):
-        temporary = tempfile.TemporaryDirectory(prefix='qqmusic-studio-integration-')
+        temporary = tempfile.TemporaryDirectory(prefix='format-kit-integration-')
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name).resolve()
         self.source = self.root / 'iQmc'
@@ -240,7 +240,7 @@ class StudioIntegrationTest(unittest.TestCase):
         self.assertEqual(self.status_for(filename)['status'], 'failed')
         self.assertEqual(list(self.mp3_dir.iterdir()), [])
         self.assertEqual(list(self.original_dir.iterdir()), [])
-        self.assertEqual(list(self.export.glob('.qqmusic-convert-*')), [])
+        self.assertEqual(list(self.export.glob('.format-kit-convert-*')), [])
 
     def test_qm_uses_a_different_mp3_preset_with_the_same_original(self):
         paths = [write_musicex(self.source, name, media_id, resource) for name, media_id, resource in [

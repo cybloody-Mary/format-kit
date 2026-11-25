@@ -51,7 +51,7 @@ func run(args []string, input io.Reader, output io.Writer) int {
 		return 1
 	}
 
-	flags := flag.NewFlagSet("qqmusic-decoder-engine", flag.ContinueOnError)
+	flags := flag.NewFlagSet("format-kit-engine", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	ffmpeg := flags.String("ffmpeg", "", "absolute path to FFmpeg")
 	if err := flags.Parse(args); err != nil || flags.NArg() != 0 || !filepath.IsAbs(*ffmpeg) {

@@ -1,3 +1,3 @@
-module qqmusic-decoder-launcher
+module format-kit-launcher
 
 go 1.26.6

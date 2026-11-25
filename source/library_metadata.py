@@ -9,7 +9,7 @@ import unicodedata
 
 from tunefree_backend import audio, tags
 
-CATALOG = 'qqmusic.sqlite'
+CATALOG = 'format-kit.sqlite'
 ARTIST_SEPARATOR = re.compile(r'[\r\n]+')
 FILE_ARTIST_SEPARATOR = re.compile(r'[,，、;；\r\n]+')
 

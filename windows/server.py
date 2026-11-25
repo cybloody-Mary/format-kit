@@ -1,4 +1,4 @@
-"""Local library and conversion batch manager for QQ Music downloads."""
+"""Local library and conversion batch manager for Format Kit."""
 from __future__ import annotations
 
 import argparse
@@ -41,8 +41,8 @@ def now():
 
 def private_directory():
     if os.name == "nt":
-        return Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "qqmusic-decoder"
-    return Path.home() / ".local" / "share" / "qqmusic-decoder"
+        return Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "format-kit"
+    return Path.home() / ".local" / "share" / "format-kit"
 
 
 def write_json(path, value):
@@ -112,7 +112,7 @@ def file_ready(path, extension):
 def import_audio(source, output_dir, original, extension):
     """Publish every track atomically and preserve existing exports."""
     stem = Path(original).stem.rstrip(" .") or "track"
-    temporary = output_dir / (".qqdec-" + uuid4().hex + ".tmp")
+    temporary = output_dir / (".format-kit-" + uuid4().hex + ".tmp")
     try:
         shutil.copyfile(source, temporary)
         for i in range(1, 10001):
@@ -497,7 +497,7 @@ class LocalHandler(BaseHTTPRequestHandler):
         origin = self.headers.get("Origin")
         if host != self.server.authority or origin not in (None, f"http://{host}"):
             return False
-        if api and self.headers.get("X-QQMusic-Request") != "1":
+        if api and self.headers.get("X-Format-Kit-Request") != "1":
             return False
         return True
 
@@ -583,7 +583,7 @@ def main():
     parser.add_argument("--port", type=int, default=0)
     parser.add_argument("--no-browser", action="store_true")
     parser.add_argument("--verbose", action="store_true")
-    parser.add_argument("--engine", type=Path, default=ROOT / "engine" / "qqmusic-decoder-engine.exe")
+    parser.add_argument("--engine", type=Path, default=ROOT / "engine" / "format-kit-engine.exe")
     parser.add_argument("--ffmpeg", type=Path, default=ROOT / "engine" / "ffmpeg.exe")
     options = parser.parse_args()
     data = options.data_dir.resolve()
@@ -599,7 +599,7 @@ def main():
                 bookmark.write_text(url, encoding="ascii")
                 stopped = threading.Event()
                 threading.Thread(target=app.monitor, args=(stopped,), daemon=True).start()
-                print(f"QQ Music Decoder: {url}", flush=True)
+                print(f"Format Kit: {url}", flush=True)
                 try:
                     if not options.no_browser and not webbrowser.open(url):
                         raise ValueError("Could not open the default browser.")
@@ -613,7 +613,7 @@ def main():
         if bookmark.is_file():
             url = bookmark.read_text(encoding="ascii")
             if url.startswith("http://127.0.0.1:"):
-                print(f"QQ Music Decoder: {url}", flush=True)
+                print(f"Format Kit: {url}", flush=True)
                 if not options.no_browser and not webbrowser.open(url):
                     raise ValueError("Could not open the default browser.")
                 return

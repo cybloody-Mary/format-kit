@@ -62,7 +62,7 @@ function button(label, kind = "secondary", icon = "") {
 }
 
 async function api(path, body) {
-  const options = { headers: { "X-QQMusic-Request": "1" } };
+  const options = { headers: { "X-Format-Kit-Request": "1" } };
   if (body !== undefined) {
     options.method = "POST";
     options.headers["Content-Type"] = "application/json";

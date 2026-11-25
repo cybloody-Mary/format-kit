@@ -6,14 +6,14 @@ import os
 import sys
 import tempfile
 
-APP = 'QQMusicStudio'
+APP = 'Format Kit'
 MAC_CONTAINER = (
     Path('Library/Containers/com.tencent.QQMusicMac/Data/Library/Application Support/QQMusicMac')
 )
 
 
 def data_directory():
-    override = os.environ.get('QQMUSIC_STUDIO_HOME')
+    override = os.environ.get('FORMAT_KIT_HOME')
     if override:
         return Path(override).expanduser().resolve()
     home = Path.home()
@@ -60,7 +60,7 @@ def source_suggestion():
 
 
 def export_suggestion():
-    return user_folder('Music') / 'QQ音乐转换'
+    return user_folder('Music') / 'Format Kit 导出'
 
 
 def read_config():

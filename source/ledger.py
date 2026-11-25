@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""本机 QQ 音乐转码台账。只读取下载和导出目录，状态保存在程序旁。"""
+"""Format Kit 本地转码台账。只读取下载和导出目录，状态保存在程序旁。"""
 
 import argparse
 from collections import Counter
@@ -217,7 +217,7 @@ def original_available(path, stamp):
 def save_text(path, content):
     path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile('w', encoding='utf-8', dir=path.parent,
-                                     prefix='.qqmusic-', delete=False) as handle:
+                                     prefix='.format-kit-', delete=False) as handle:
         temporary = Path(handle.name)
         handle.write(content)
         handle.flush()
@@ -395,7 +395,7 @@ def render_report(rows, state, src, out):
                                   out / '原音' / exported['original'], exported['signatures']):
             legacy.append(exported)
 
-    lines = ['QQ 音乐转码台账', f'刷新时间　{now()}', '',
+    lines = ['Format Kit 转码台账', f'刷新时间　{now()}', '',
              f'源目录　{src}', f'导出目录　{out}', '',
              f'当前源文件 {len(rows) + duplicates} 个，重复副本 {duplicates} 个。',
              '　'.join(f'{label} {counts[status]}' for status, label in STATUS.items()),
@@ -422,10 +422,10 @@ def render_report(rows, state, src, out):
             lines.append(f"  {event['time']}　{STATUS[event['status']]}　"
                          f"{one_line(event['file'])}　｜　{one_line(event['detail'])}")
         lines.append('')
-    lines.extend(['【使用方法】', '双击「刷新QQ音乐转码台账.command」启动自动同步。',
+    lines.extend(['【使用方法】', '在 Format Kit 中刷新歌曲库，或运行「python3 ledger.py watch」自动同步。',
                   '单独扫描文件无法判断转码器报错。转码流程可用 failure 命令记录失败，'
                   '用 success 命令核验及登记导出。',
-                  '运行「刷新QQ音乐转码台账.command --help」查看队列、登记和停止命令。', ''])
+                  '运行「python3 ledger.py --help」查看队列、登记和停止命令。', ''])
     return '\n'.join(lines), counts, len(legacy)
 
 
@@ -508,8 +508,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, default=SOURCE)
     parser.add_argument('--export', type=Path, default=EXPORT)
-    parser.add_argument('--state', type=Path, default=HERE / '.qqmusic-ledger.json')
-    parser.add_argument('--report', type=Path, default=HERE / 'QQ音乐转码清单.txt')
+    parser.add_argument('--state', type=Path, default=HERE / '.format-kit-ledger.json')
+    parser.add_argument('--report', type=Path, default=HERE / 'Format Kit 转码清单.txt')
     actions = parser.add_subparsers(dest='action')
     actions.add_parser('refresh', help='刷新当前状态和文本清单')
     watcher = actions.add_parser('watch', help='在源文件或导出文件变化后自动刷新台账')

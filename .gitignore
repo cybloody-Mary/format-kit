@@ -18,8 +18,8 @@ __pycache__/
 *.plist
 *.key
 *.pem
-.qqmusic-*
-QQ音乐转码清单.txt
+.format-kit-*
+Format Kit 转码清单.txt
 *.flac
 *.mflac
 *.mgg

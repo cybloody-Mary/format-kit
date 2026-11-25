@@ -62,7 +62,7 @@ for points in [16, 32, 128, 256, 512] {
 
 def build_macos_icon(master_png: Path, destination: Path, *, sdk=None):
     """Render the macOS rounded silhouette and package its Retina sizes."""
-    with tempfile.TemporaryDirectory(prefix='qqmusic-macos-icon-') as directory:
+    with tempfile.TemporaryDirectory(prefix='format-kit-macos-icon-') as directory:
         work = Path(directory)
         iconset = work / 'AppIcon.iconset'
         iconset.mkdir()
